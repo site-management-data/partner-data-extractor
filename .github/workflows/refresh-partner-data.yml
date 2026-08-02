@@ -1,0 +1,53 @@
+name: Refresh partner data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate workbook
+        env:
+          PARTNER_NAME: MAAN
+          OUTPUT_FILENAME: MAAN_Partner_Data.xlsx
+          OUTPUT_DIRECTORY: outputs
+          INCLUDE_ALERTS: "true"
+          INCLUDE_REFERRALS: "true"
+          ACTIVITY_PARTNER_COLUMN: Agency
+          SITE_LIST_URL: ${{ secrets.SITE_LIST_URL }}
+          ACTIVITY_URL: ${{ secrets.ACTIVITY_URL }}
+          SITE_MONITORING_URL: ${{ secrets.SITE_MONITORING_URL }}
+          CONTACTS_URL: ${{ secrets.CONTACTS_URL }}
+          SITE_ALERT_URL: ${{ secrets.SITE_ALERT_URL }}
+          REFERRALS_URL: ${{ secrets.REFERRALS_URL }}
+        run: python main.py
+
+      - name: Commit refreshed workbook
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add outputs/MAAN_Partner_Data.xlsx
+          if git diff --cached --quiet; then
+            echo "No workbook changes to commit."
+          else
+            git commit -m "Refresh MAAN partner data"
+            git push
+          fi
