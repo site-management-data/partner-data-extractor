@@ -18,6 +18,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        partner:
+          - MAAN
+          - ACTED
+          - BLDA
+          - NRC
+          - PHC
+          - CESVI
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -33,8 +43,8 @@ jobs:
 
       - name: Generate workbook
         env:
-          PARTNER_NAME: MAAN
-          OUTPUT_FILENAME: MAAN_Partner_Data.xlsx
+          PARTNER_NAME: ${{ matrix.partner }}
+          OUTPUT_FILENAME: ${{ matrix.partner }}_Partner_Data.xlsx
           OUTPUT_DIRECTORY: outputs
           INCLUDE_ALERTS: "true"
           INCLUDE_REFERRALS: "true"
@@ -47,25 +57,55 @@ jobs:
           REFERRALS_URL: ${{ secrets.REFERRALS_URL }}
         run: python main.py
 
-      - name: Prepare download page
+      - name: Upload partner workbook
+        uses: actions/upload-artifact@v4
+        with:
+          name: partner-${{ matrix.partner }}
+          path: outputs/${{ matrix.partner }}_Partner_Data.xlsx
+          retention-days: 1
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download partner workbooks
+        uses: actions/download-artifact@v4
+        with:
+          path: workbooks
+
+      - name: Prepare partner download pages
         run: |
-          mkdir -p public
-          cp outputs/MAAN_Partner_Data.xlsx public/MAAN_Partner_Data.xlsx
+          mkdir -p public/maan
+          mkdir -p public/acted
+          mkdir -p public/blda
+          mkdir -p public/nrc
+          mkdir -p public/phc
+          mkdir -p public/cesvi
+
+          cp workbooks/partner-MAAN/MAAN_Partner_Data.xlsx public/maan/
+          cp workbooks/partner-ACTED/ACTED_Partner_Data.xlsx public/acted/
+          cp workbooks/partner-BLDA/BLDA_Partner_Data.xlsx public/blda/
+          cp workbooks/partner-NRC/NRC_Partner_Data.xlsx public/nrc/
+          cp workbooks/partner-PHC/PHC_Partner_Data.xlsx public/phc/
+          cp workbooks/partner-CESVI/CESVI_Partner_Data.xlsx public/cesvi/
 
           UPDATED_AT="$(date -u '+%Y-%m-%d %H:%M UTC')"
 
-          cat > public/index.html <<EOF
+          create_page () {
+            PARTNER="$1"
+            FOLDER="$2"
+            FILE="$3"
+
+            cat > "public/${FOLDER}/index.html" <<EOF
           <!doctype html>
           <html lang="en">
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Site Management Partner Data - MAAN</title>
-
+            <title>Site Management Partner Data - ${PARTNER}</title>
             <style>
-              * {
-                box-sizing: border-box;
-              }
+              * { box-sizing: border-box; }
 
               body {
                 margin: 0;
@@ -125,22 +165,14 @@ jobs:
 
           <body>
             <main>
-              <h1>Site Management Partner Data - MAAN</h1>
+              <h1>Site Management Partner Data - ${PARTNER}</h1>
 
               <p class="updated">
                 Last updated: ${UPDATED_AT}
               </p>
 
-              <a
-                class="download-link"
-                href="MAAN_Partner_Data.xlsx"
-                download
-              >
-                <svg
-                  class="excel-icon"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
+              <a class="download-link" href="${FILE}" download>
+                <svg class="excel-icon" viewBox="0 0 24 24" aria-hidden="true">
                   <rect
                     x="3"
                     y="2"
@@ -159,13 +191,20 @@ jobs:
                     stroke-linejoin="round"
                   />
                 </svg>
-
                 Download latest Excel workbook
               </a>
             </main>
           </body>
           </html>
           EOF
+          }
+
+          create_page "MAAN" "maan" "MAAN_Partner_Data.xlsx"
+          create_page "ACTED" "acted" "ACTED_Partner_Data.xlsx"
+          create_page "BLDA" "blda" "BLDA_Partner_Data.xlsx"
+          create_page "NRC" "nrc" "NRC_Partner_Data.xlsx"
+          create_page "PHC" "phc" "PHC_Partner_Data.xlsx"
+          create_page "CESVI" "cesvi" "CESVI_Partner_Data.xlsx"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -181,7 +220,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     runs-on: ubuntu-latest
-    needs: build
+    needs: publish
 
     steps:
       - name: Deploy GitHub Pages
