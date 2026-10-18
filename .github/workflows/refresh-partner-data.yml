@@ -27,6 +27,8 @@ jobs:
           - NRC
           - PHC
           - CESVI
+          - AIOCP
+          - FAFD
 
     steps:
       - name: Check out repository
@@ -82,6 +84,8 @@ jobs:
           mkdir -p public/nrc
           mkdir -p public/phc
           mkdir -p public/cesvi
+          mkdir -p public/fafd
+          mkdir -p public/aiocp
 
           cp workbooks/partner-MAAN/MAAN_Partner_Data.xlsx public/maan/
           cp workbooks/partner-ACTED/ACTED_Partner_Data.xlsx public/acted/
@@ -89,6 +93,8 @@ jobs:
           cp workbooks/partner-NRC/NRC_Partner_Data.xlsx public/nrc/
           cp workbooks/partner-PHC/PHC_Partner_Data.xlsx public/phc/
           cp workbooks/partner-CESVI/CESVI_Partner_Data.xlsx public/cesvi/
+          cp workbooks/partner-AIOCP/AIOCP_Partner_Data.xlsx public/aiocp/
+          cp workbooks/partner-FAFD/FAFD_Partner_Data.xlsx public/fafd/
 
           UPDATED_AT="$(date -u '+%Y-%m-%d %H:%M UTC')"
 
@@ -205,6 +211,8 @@ jobs:
           create_page "NRC" "nrc" "NRC_Partner_Data.xlsx"
           create_page "PHC" "phc" "PHC_Partner_Data.xlsx"
           create_page "CESVI" "cesvi" "CESVI_Partner_Data.xlsx"
+          create_page "AIOCP" "aiocp" "AIOCP_Partner_Data.xlsx"
+          create_page "FAFD" "fafd" "FAFD_Partner_Data.xlsx"
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
