@@ -194,7 +194,7 @@ def filter_partner_data(
 
     alerts = raw["alerts"].copy()
     if not alerts.empty:
-        reporting_agency_column = "Details of Alert-Agency name"
+        reporting_agency_column = "Agency_name"
         require_columns(alerts, ["Site ID", reporting_agency_column], "Site alerts")
         alerts["Site ID"] = normalise_site_id(alerts["Site ID"])
 
